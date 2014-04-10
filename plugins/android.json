@@ -1,0 +1,32 @@
+{
+    "prepare_queue": {
+        "installed": [],
+        "uninstalled": []
+    },
+    "config_munge": {
+        "res/xml/config.xml": {
+            "/*": {
+                "<feature name=\"Notification\"><param name=\"android-package\" value=\"org.apache.cordova.dialogs.Notification\" /></feature>": 1,
+                "<feature name=\"BCBluetooth\"><param name=\"android-package\" value=\"org.bcsphere.bluetooth.BCBluetooth\" /></feature>": 1
+            }
+        },
+        "AndroidManifest.xml": {
+            "/manifest": {
+                "<uses-permission android:name=\"android.permission.BLUETOOTH\" />": 1,
+                "<uses-permission android:name=\"android.permission.BLUETOOTH_ADMIN\" />": 1
+            },
+            "/manifest/application": {
+                "<uses-library android:name=\"com.htc.android.bluetooth.le\" android:required=\"false\" />": 1
+            }
+        }
+    },
+    "installed_plugins": {
+        "org.apache.cordova.dialogs": {
+            "PACKAGE_NAME": "com.jumacc.bcfindme"
+        },
+        "org.bcsphere.bluetooth": {
+            "PACKAGE_NAME": "com.jumacc.bcfindme"
+        }
+    },
+    "dependent_plugins": {}
+}
