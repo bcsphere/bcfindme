@@ -104,12 +104,12 @@ module.exports = {
      *
      * @param {Integer} count       The number of beeps.
      */
-    beep: function(type) {
-        exec(null, null, "Notification", "beep", [type]);
+    beep: function() {
+        exec(null, null, "Notification", "beep", []);
     },
     
-    stopBeep:function(type){
-        exec(null, null, "Notification", "stopBeep", [type]);
+    stopBeep:function(){
+        exec(null, null, "Notification", "stopBeep", []);
     }
 };
 

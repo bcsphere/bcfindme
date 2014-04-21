@@ -61,7 +61,9 @@ var app = {
 	onBluetoothDisconnect: function(arg){
 		
         window.clearInterval(app.interval_rssi);
-		$.mobile.changePage("searched.html","slideup");
+        app.state = "waiting_to_find";
+		$('#doevent').attr('src','img/find.png');
+		// $.mobile.changePage("searched.html","slideup");
 	},
     
     onDeviceConnected : function(arg){
@@ -133,7 +135,6 @@ var app = {
 			app.interval_connect = window.setInterval(function()
             {
             	var addr = sessionStorage.getItem("deviceAddress");
-            	
                 app.device.connect(app.connectSuccess);
             }, 5000);
 
@@ -175,14 +176,11 @@ var app = {
 
     connectSuccess : function()
     {
+    	window.clearInterval(app.interval_connect);
     	app.state = "standing_by";
     	$('#doevent').attr('src','img/refresh1.png');
 		$('canvas').remove();
-
-
-
-    	app.device.discoverServices(function(){
-    		window.clearInterval(app.interval_connect);
+    	app.device.discoverServices(function(){    		
     		app.device.getServiceByUUID("ffe0")[0].discoverCharacteristics(function(){
 			app.device.getServiceByUUID("ffe0")[0].characteristics[0].subscribe(app.onNotify);
 				},function(){});
@@ -235,7 +233,7 @@ var app = {
 				};				
 			navigator.notification.beep();
 		}
-		else
+		else if (value == "01")
 		{
 			if (app.state == "find_me") 
 				{
@@ -260,42 +258,6 @@ var app = {
     {
     	$.mobile.changePage("setting.html","slideup");
     },
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 	canvas : function (){
@@ -363,7 +325,6 @@ var app = {
 					}else{
 						i=0;
 					}
-		
 					setTimeout(change1,40);
 				}
 			setTimeout(change1, 10);
