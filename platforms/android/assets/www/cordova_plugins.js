@@ -15,6 +15,20 @@ module.exports = [
         ]
     },
     {
+        "file": "plugins/org.bcsphere.bleprofiles/www/findme.js",
+        "id": "org.bcsphere.bleprofiles.findme",
+        "merges": [
+            "BC.Findme"
+        ]
+    },
+    {
+        "file": "plugins/org.bcsphere.bleprofiles/www/proximity.js",
+        "id": "org.bcsphere.bleprofiles.proximity",
+        "merges": [
+            "BC.Proximity"
+        ]
+    },
+    {
         "file": "plugins/org.bcsphere.bluetooth/www/bluetooth.js",
         "id": "org.bcsphere.bluetooth.bluetooth",
         "merges": [
@@ -26,7 +40,8 @@ module.exports.metadata =
 // TOP OF METADATA
 {
     "org.apache.cordova.dialogs": "0.2.6",
-    "org.bcsphere.bluetooth": "0.2.1"
+    "org.bcsphere.bleprofiles": "0.1.0",
+    "org.bcsphere.bluetooth": "0.3.0"
 }
 // BOTTOM OF METADATA
 });

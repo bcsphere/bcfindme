@@ -1,1 +1,1 @@
-{"source":{"type":"local","path":"C:\\Users\\DELL\\Desktop\\BCFindMe\\plugins\\org.bcsphere.bluetooth"}}
+{"source":{"type":"git","url":"https://github.com/bcsphere/bluetooth","subdir":"."}}

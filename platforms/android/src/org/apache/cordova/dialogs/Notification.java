@@ -130,7 +130,7 @@ public class Notification extends CordovaPlugin {
 	}
 
 	public  synchronized void stopBeep(){
-		if (notification != null && notification.isPlaying()) {
+		if (notification != null && isTrue) {
 			notification.stop();
 			isTrue = false;
 		}
@@ -145,9 +145,9 @@ public class Notification extends CordovaPlugin {
 					notification.play();
 					long timeout = 5000;
 					while (notification.isPlaying() && (timeout > 0)) {
-						timeout = timeout - 100;
+						timeout = timeout - 500;
 						try {
-							Thread.sleep(100);
+							Thread.sleep(500);
 						} catch (InterruptedException e) {
 						}
 					}

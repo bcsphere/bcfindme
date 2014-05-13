@@ -87,8 +87,13 @@ p{
 	background-color:rgb(229,137,32);
 }
 .header .back{
-	float:left;
-	padding: 10px 10px;
+	position:absolute;
+    top:11px;
+    left:10px;
+    width:28px;
+    height:35px;
+    display:block;
+    z-index:9999;
 }
 .header .setting{
 	display:block;

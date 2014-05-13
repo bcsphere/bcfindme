@@ -24,9 +24,13 @@
         "org.apache.cordova.dialogs": {
             "PACKAGE_NAME": "com.jumacc.bcfindme"
         },
-        "org.bcsphere.bluetooth": {
+        "org.bcsphere.bleprofiles": {
             "PACKAGE_NAME": "com.jumacc.bcfindme"
         }
     },
-    "dependent_plugins": {}
+    "dependent_plugins": {
+        "org.bcsphere.bluetooth": {
+            "PACKAGE_NAME": "com.jumacc.bcfindme"
+        }
+    }
 }

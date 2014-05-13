@@ -54,7 +54,6 @@ public class BluetoothG43plus implements IBluetooth{
 	private BluetoothGattServer mBluetoothGattServer;
 	private Context mContext;
 	private boolean isScanning = false;
-	private List<BluetoothDevice> deviceList = new ArrayList<BluetoothDevice>();;
 	private int scanSum = 0;
 	private boolean isOpenGattServer = false;
 	private int gattServerSum = 0;
@@ -69,13 +68,11 @@ public class BluetoothG43plus implements IBluetooth{
 	private HashMap<String, CallbackContext> addEventListenerCC = new HashMap<String, CallbackContext>();
 	private CallbackContext addServiceCC;
 	private HashMap<String, BluetoothGattService> localServices = new HashMap<String, BluetoothGattService>();
-	private HashMap<String, Integer> recordServiceIndex = new HashMap<String, Integer>();
-	private HashMap<String, Integer> recordCharacteristicIndex = new HashMap<String, Integer>();
+	private HashMap<BluetoothGattCharacteristic, Integer> recordServiceIndex = new HashMap<BluetoothGattCharacteristic, Integer>();
+	private HashMap<BluetoothGattCharacteristic, Integer> recordCharacteristicIndex = new HashMap<BluetoothGattCharacteristic, Integer>();
 	private HashMap< String ,Boolean> connectedDevice = new HashMap<String, Boolean>(); 
 	private HashMap<String, BluetoothGatt> mBluetoothGatts = new HashMap<String, BluetoothGatt>();
 	private HashMap<String, List<BluetoothGattService>> deviceServices = new HashMap<String, List<BluetoothGattService>>();
-	private HashMap<String, Integer> deviceRssi = new HashMap<String, Integer>();
-	private HashMap<String, byte[]> deviceAdvData = new HashMap<String, byte[]>();
 	
 	@Override
 	public void setContext(Context context) {
@@ -93,18 +90,7 @@ public class BluetoothG43plus implements IBluetooth{
 			scanSum = scanSum + 1;
 			return;
 		}
-		if (deviceList != null) {
-			deviceList = null;
-			deviceList = new ArrayList<BluetoothDevice>();
-		}
-		if (deviceRssi != null) {
-			deviceRssi = null;
-			deviceRssi = new HashMap<String, Integer>();
-		}
-		if (deviceAdvData != null) {
-			deviceAdvData = null;
-			deviceAdvData = new HashMap<String, byte[]>();
-		}
+
 		UUID[] uuids = Tools.getUUIDs(json);
 		if (uuids == null || uuids.length < 1) {
 			mBluetoothAdapter.startLeScan(mLeScanCallback);
@@ -117,26 +103,6 @@ public class BluetoothG43plus implements IBluetooth{
 			scanSum = scanSum + 1;	
 			isScanning = true;
 		}
-	}
-
-	@Override
-	public void getScanData(JSONArray json, CallbackContext callbackContext) {
-		Log.i(TAG, "getScanData");
-		if (!isScanning) {
-			Tools.sendErrorMsg(callbackContext);
-			return;
-		}
-		JSONArray deviceInfoList = new JSONArray();
-		for (int i = 0; i <deviceList.size(); i++) {
-			JSONObject obj = new JSONObject();
-			Tools.addProperty(obj, Tools.DEVICE_ADDRESS, deviceList.get(i).getAddress());
-			Tools.addProperty(obj, Tools.DEVICE_NAME, deviceList.get(i).getName());
-			Tools.addProperty(obj, Tools.IS_CONNECTED, Tools.IS_FALSE);
-			Tools.addProperty(obj, Tools.RSSI, deviceRssi.get(deviceList.get(i).getAddress()));
-			Tools.addProperty(obj, Tools.ADVERTISEMENT_DATA, Tools.decodeAdvData(deviceAdvData.get(deviceList.get(i).getAddress())));
-			deviceInfoList.put(obj);
-		}
-		callbackContext.success(deviceInfoList);
 	}
 
 	@Override
@@ -316,16 +282,16 @@ public class BluetoothG43plus implements IBluetooth{
 			descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
 			mBluetoothGatts.get(deviceAddress).writeDescriptor(descriptor);
 			mBluetoothGatts.get(deviceAddress).setCharacteristicNotification(characteristic, true);
-			recordServiceIndex.put(deviceAddress, serviceIndex);
-			recordCharacteristicIndex.put(deviceAddress, characteristicIndex);
+			recordServiceIndex.put(characteristic, serviceIndex);
+			recordCharacteristicIndex.put(characteristic, characteristicIndex);
 		}else {
 			descriptor.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
 			mBluetoothGatts.get(deviceAddress).writeDescriptor(descriptor);
 			mBluetoothGatts.get(deviceAddress).setCharacteristicNotification(characteristic, false);
 			Tools.sendSuccessMsg(callbackContext);
 			setNotificationCC.remove(characteristic);
-			recordServiceIndex.remove(deviceAddress);
-			recordCharacteristicIndex.remove(deviceAddress);
+			recordServiceIndex.remove(characteristic);
+			recordCharacteristicIndex.remove(characteristic);
 		}
 	}
 
@@ -606,12 +572,15 @@ public class BluetoothG43plus implements IBluetooth{
 
 
 	private void startScanManage(BluetoothDevice device , int rssi , byte[] scanRecord){
-		String deviceAddress = device.getAddress();
-		if (!deviceList.contains(device)) {
-			deviceList.add(device);
-			deviceAdvData.put(deviceAddress, scanRecord);
-		}
-		deviceRssi.put(deviceAddress, rssi);
+		JSONObject obj = new JSONObject();
+		Tools.addProperty(obj, Tools.DEVICE_ADDRESS, device.getAddress());
+		Tools.addProperty(obj, Tools.DEVICE_NAME, device.getName());
+		Tools.addProperty(obj, Tools.IS_CONNECTED, Tools.IS_FALSE);
+		Tools.addProperty(obj, Tools.RSSI, rssi);
+		Tools.addProperty(obj, Tools.ADVERTISEMENT_DATA, Tools.decodeAdvData(scanRecord));
+		PluginResult pluginResult = new PluginResult(PluginResult.Status.OK , obj);
+		pluginResult.setKeepCallback(true);
+		addEventListenerCC.get(Tools.NEW_ADV_PACKET).sendPluginResult(pluginResult);
 	}
 
 	private void conncetManage(BluetoothGatt gatt , int newState){
@@ -654,30 +623,25 @@ public class BluetoothG43plus implements IBluetooth{
 		String deviceAddress = getDeviceAddress(gatt);
 		JSONObject obj = new JSONObject();
 		JSONArray ary = new JSONArray();
-		if (status == BluetoothGatt.GATT_SUCCESS) {
-			if (getServicesCC.get(deviceAddress) !=null) {
-				if (deviceServices.get(deviceAddress)==null) {
-					deviceServices.put(deviceAddress, gatt.getServices());
-				}
-				if (deviceServices.get(deviceAddress)!=null) {
-					deviceServices.get(deviceAddress).remove(deviceAddress);
-					deviceServices.put(deviceAddress, gatt.getServices());
-				}
-				Tools.addProperty(obj, Tools.DEVICE_ADDRESS, deviceAddress);
-				for (int i = 0; i <deviceServices.get(deviceAddress).size(); i++) {
-					JSONObject infoObj = new JSONObject();
-					Tools.addProperty(infoObj, Tools.SERVICE_INDEX, i);
-					Tools.addProperty(infoObj, Tools.SERVICE_UUID, deviceServices.get(deviceAddress).get(i).getUuid());
-					Tools.addProperty(infoObj, Tools.SERVICE_NAME, Tools.lookup(deviceServices.get(deviceAddress).get(i).getUuid()));
-					ary.put(infoObj);
-				}
-				Tools.addProperty(obj, Tools.SERVICES, ary);
-				getServicesCC.get(deviceAddress).success(obj);
-				getServicesCC.remove(deviceAddress);
-			}else {
-				Tools.sendErrorMsg(getServicesCC.get(deviceAddress));
-				getServicesCC.remove(deviceAddress);
+		if (getServicesCC.get(deviceAddress) !=null) {
+			if (deviceServices.get(deviceAddress)==null) {
+				deviceServices.put(deviceAddress, gatt.getServices());
 			}
+			if (deviceServices.get(deviceAddress)!=null) {
+				deviceServices.get(deviceAddress).remove(deviceAddress);
+				deviceServices.put(deviceAddress, gatt.getServices());
+			}
+			Tools.addProperty(obj, Tools.DEVICE_ADDRESS, deviceAddress);
+			for (int i = 0; i <deviceServices.get(deviceAddress).size(); i++) {
+				JSONObject infoObj = new JSONObject();
+				Tools.addProperty(infoObj, Tools.SERVICE_INDEX, i);
+				Tools.addProperty(infoObj, Tools.SERVICE_UUID, deviceServices.get(deviceAddress).get(i).getUuid());
+				Tools.addProperty(infoObj, Tools.SERVICE_NAME, Tools.lookup(deviceServices.get(deviceAddress).get(i).getUuid()));
+				ary.put(infoObj);
+			}
+			Tools.addProperty(obj, Tools.SERVICES, ary);
+			getServicesCC.get(deviceAddress).success(obj);
+			getServicesCC.remove(deviceAddress);
 		}
 	}
 
@@ -733,8 +697,8 @@ public class BluetoothG43plus implements IBluetooth{
 		if (setNotificationCC.get(characteristic) != null) {
 			JSONObject obj = new JSONObject();
 			Tools.addProperty(obj, Tools.DEVICE_ADDRESS, deviceAddress);
-			Tools.addProperty(obj, Tools.SERVICE_INDEX, recordServiceIndex.get(deviceAddress));
-			Tools.addProperty(obj, Tools.CHARACTERISTIC_INDEX, recordCharacteristicIndex.get(deviceAddress));
+			Tools.addProperty(obj, Tools.SERVICE_INDEX, recordServiceIndex.get(characteristic));
+			Tools.addProperty(obj, Tools.CHARACTERISTIC_INDEX, recordCharacteristicIndex.get(characteristic));
 			Tools.addProperty(obj, Tools.VALUE, Tools.encodeBase64(characteristic.getValue()));
 			Tools.addProperty(obj, Tools.DATE, Tools.getDateString());
 			PluginResult pluginResult = new PluginResult(PluginResult.Status.OK , obj);
